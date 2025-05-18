@@ -1,14 +1,24 @@
+import Loading from '@/components/Loading'
 import Colors from '@/constants/Colors'
 import { defaultStyles } from '@/constants/Styles'
+import { syncUserToBackend } from '@/utils/verifyUser'
 import { useAuth, useSignIn, useSignUp } from '@clerk/clerk-expo'
 import { useLocalSearchParams } from 'expo-router'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Image, TextInput, TouchableOpacity, Alert, Modal } from 'react-native'
 
 
 const Page = () => {
   const {type} = useLocalSearchParams<{type:string}>()
-  console.log('type', type);
+  // console.log('type', type);
+
+
+  // useEffect(() => {
+  //   fetch('https://google.com')
+  //     .then(() => console.log('Network is working'))
+  //     .catch((e) => console.log('Network error:', e));
+  // }, []);
+  
 
 
   const [emailAddress, setEmailAdress] = useState('')
@@ -18,22 +28,42 @@ const Page = () => {
 
   const [code, setCode] = useState(''); 
   const [modalVisible, setModalVisible] = useState(false);
-  console.log('email address', emailAddress);
-  
-  console.log('password', password);
+  // console.log('email address', emailAddress);
+  // console.log('password', password);
   
 
   const {signIn, isLoaded, setActive} = useSignIn()
+ 
   
   //* give them different names with ts buy putting them after ":"
   const {signUp, isLoaded: signUpLoaded, setActive: signupSetActive} = useSignUp()
-  console.log('signUpLoaded', signUpLoaded);
+  // console.log('signUpLoaded', signUpLoaded);
 
 
 //! only to check if I'm signed in
-const { isSignedIn, userId } = useAuth();
-console.log('User Signed In:', isSignedIn);
-console.log('User ID:', userId);
+const { isSignedIn, userId, getToken } = useAuth();
+// console.log('User Signed In:', isSignedIn);
+// console.log('User ID:', userId);
+
+const [hasSynced, setHasSynced] = useState(false);
+
+useEffect(()=>{
+ const doSync = async() => {
+  console.log("sync working");
+  
+  const token = await getToken();
+  console.log("token onSignIn:", token);
+  if(token && !hasSynced){
+    await syncUserToBackend(token);
+    setHasSynced(true);
+  }
+ }
+
+ if(isLoaded && isSignedIn && !hasSynced){
+  doSync()
+ }
+
+},[isSignedIn, isLoaded])
 
 
 
@@ -62,20 +92,6 @@ console.log('User ID:', userId);
     }
   }
 
-  // to force a signOut
-// const { signOut } = useAuth();
-  
-//   const onSignOutPress = async () => {
-//     try {
-//       await signOut();
-//       console.log("User signed out successfully.");
-//     } catch (error) {
-//       console.error("Error signing out:", error);
-//     }
-//   };
-//   onSignOutPress()
-
-
   const onVerifyCodePress = async () => {
     console.log('working');
     
@@ -98,22 +114,20 @@ console.log('User ID:', userId);
   };
 
 
-
-
-
   const onSignInPress = async() => {
     if(!isLoaded) return;
     setLoading(true)
-
+  
     try{
       const result = await signIn.create({identifier: emailAddress, password})
-      console.log(' onSignInPress ~result:', result);
+    //  console.log(' onSignInPress ~result:', result);
 
       setActive({
         session: result.createdSessionId
       })
+
     } catch (error: any) {
-      console.log('onSignInPress ~error:', error);
+      // console.log('onSignInPress ~error:', error);
       Alert.alert(error.errors[0].message)
     } finally {
       setLoading(false)
@@ -139,14 +153,16 @@ console.log('User ID:', userId);
       behavior={Platform.OS == 'ios'? 'padding' : 'height'}
       keyboardVerticalOffset={70} 
       style={styles.container} >
-      {loading && (
+
+      {/* {loading && (
       <View style={defaultStyles.loadingOverlay}>
-        {/* this is the loading sign */}
+        this is the loading sign
            <ActivityIndicator size='large' color='#fff' />
         </View>
-        )} 
-        <Image source={require('../assets/images/logo-dark.png')} style={styles.logo} />
+        )}  */}
+        <Loading loading={loading}/>
 
+      <Image source={require('../../assets/images/logo-dark.png')} style={styles.logo} />
       <Text style={styles.title}>
         {type === 'login' ? 'Welcome back' : 'Create your account'}
       </Text>

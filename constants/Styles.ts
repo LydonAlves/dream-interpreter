@@ -11,13 +11,6 @@ export const defaultStyles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 10,
   },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-  },
   pageContainer: {
     flex: 1,
     backgroundColor: Colors.light,
